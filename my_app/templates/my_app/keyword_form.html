@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Chatbot</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        
+        a{
+            color: greenyellow;
+        }
+       
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0d1117;
+            margin: 0;
+            padding: 0;
+            color: #58a6ff;
+        }
+        .header {
+            background-color: #161b22;
+            color: #58a6ff;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border-bottom: 3px solid #58a6ff;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: center;
+        }
+        .button {
+            background-color: #58a6ff;
+            color: #0d1117;
+            padding: 10px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #1f6feb;
+        }
+        .chat-area {
+            background-color: #161b22;
+            color: #58a6ff;
+            border: 1px solid #58a6ff;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+        
+        .chat-input {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #0d1117;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        #userQuery {
+            width: 60%;
+            padding: 10px;
+            border: 2px solid #58a6ff;
+            border-radius: 4px;
+            color: #58a6ff;
+            background-color: #0d1117;
+            margin-right:600px;
+        }
+    </style>
+</head>
+<body>
+
+<form method="POST" action="{% url 'logout_form' %}">
+    {% csrf_token %}
+    <input type="submit" value="Logout">
+</form>
+<div class="container">
+    <div class="flex-center file-upload-container">
+        <label for="sharedFileInput">Upload File</label>
+        <input type="file" id="sharedFileInput" class="file-input" required>
+    </div>
+
+    
+
+    <div id="chatContainer">
+        <!-- Chat history will be displayed here -->
+    </div>
+
+    <div class="chat-input">
+        <input type="text" id="userQuery" placeholder="Type your query here...">
+        <button class="button" onclick="sendChat()">Send</button>
+    </div>
+</div>
+
+
+<script>
+function streamResponse(response, delay = 50) {
+    var chatContainer = document.getElementById('chatContainer');
+
+    // Create a new paragraph for the bot's message
+    var botMessage = document.createElement('p');
+    chatContainer.appendChild(botMessage);
+
+    // Combine the "Bot:" label and the response content in the same paragraph
+    botMessage.innerHTML = "<strong>Bot:</strong> ";
+
+    // Create a span for the streamed response within the paragraph
+    var responseSpan = document.createElement('span');
+    botMessage.appendChild(responseSpan);
+
+    // Set the entire response as innerHTML but hide it initially
+    responseSpan.innerHTML = response;
+    responseSpan.style.visibility = 'hidden';
+
+    var index = 0;
+    function revealCharacter() {
+        if (index < response.length) {
+            responseSpan.innerHTML = response.substring(0, index++);
+            responseSpan.style.visibility = 'visible';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            setTimeout(revealCharacter, delay);
+        }
+    }
+
+    revealCharacter();
+}
+
+function sendChat() {
+    var userQuery = document.getElementById('userQuery').value;
+    if (!userQuery.trim()) {
+        alert('Please enter a query.');
+        return;
+    }
+
+    var fileInput = document.getElementById('sharedFileInput');
+    if (fileInput.files.length === 0) {
+        alert('Please select a file to upload.');
+        return;
+    }
+
+    var chatContainer = document.getElementById('chatContainer');
+    // Create a new paragraph for the user's message
+    var userMessage = document.createElement('p');
+    chatContainer.appendChild(userMessage);
+
+    // Add the "User:" label
+    var userLabel = document.createElement('strong');
+    userLabel.textContent = 'User: ';
+    userMessage.appendChild(userLabel);
+
+    // Add the user's query
+    userMessage.appendChild(document.createTextNode(userQuery));
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    var formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    formData.append('user_query', userQuery);
+    formData.append('action', 'chat_response');
+
+    $.ajax({
+        url: '', // The same URL as the form's action
+        type: 'POST',
+        data: formData,
+        processData: false, 
+        contentType: false, 
+        success: function(response) {
+            streamResponse(response);
+        },
+        error: function() {
+            alert('An error occurred. Please try again.');
+        }
+    });
+}
+
+document.getElementById('userQuery').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        sendChat();
+    }
+});
+</script>
+
+</body>
+</html>

@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-tfs%kzr5(vza0&$ogeu)r6jn697h7&r-tx#iv370!inu_b&9vm
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.235.0.8']
+ALLOWED_HOSTS = ['172.235.0.8','127.0.0.1']
 
 
 # Application definition
@@ -37,7 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'my_app.apps.MyAppConfig'
+    
 ]
+
+LOGIN_URL = "login_form"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
